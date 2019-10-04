@@ -1,0 +1,60 @@
+<html>
+	<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Фоторедактор</title>
+	<link href="script.js" rel="stylesheet">
+	<link href="baseScript.js" rel="stylesheet">
+	<link rel="stylesheet" href="style.css">
+	</head>
+
+	<body>
+		<h1>Фоторедактор</h1>
+		<div class="content">
+            <div>
+                <div class="photo-editor" id="editor">
+                    <canvas class="photo-editor__canvas" id="canvas">Обновите браузер</canvas>
+                </div>
+                <div class="panel">
+                    <div>
+                        Загрузить шаблон: <input type="file" id="fileUpload" size="24" alt="Загрузить картинку" onchange="initTemplateEditor(this);" accept="image/*"/>
+                    </div>
+                    <div>
+                        <input type="button" id="save-image" value="Сохранить">
+                    </div>
+                </div>
+                <div id="test-content">
+                    Координаты:
+                </div>
+            </div>
+
+            <div>
+                <div class="photo-editor-user" id="userPhoto">
+                    <canvas class="photo-editor__canvas" id="canvas-user">Обновите браузер</canvas>
+                </div>
+                <div>
+                    <input type="button"  id="rotateLeft" onclick="rotateImg(270)" value="←">
+                    <input type="button" id="rotateRight" onclick="rotateImg(90)" value="→">
+                </div>
+
+                <div>
+                    Загрузить свое фото: <input type="file" id="photoUser" size="24" onchange="initUserEditor(this)" alt="Загрузить картинку" accept="image/*"/>
+                    <!--                    <input type="button" id="save-image" value="Сохранить">-->
+                </div>
+            </div>
+		</div>
+
+        <div>
+            <div class="photo-editor-result" id="resultPhoto">
+                <canvas class="photo-result__canvas" id="canvas-result">Обновите браузер</canvas>
+            </div>
+            <div>
+                Посмотреть результат: <input type="button" onclick="showResult();" id="showResult" value="Посмотреть результат"/>
+            </div>
+            <div>
+                <input type="button" id="saveResult" value="Сохранить">
+            </div>
+        </div>
+	</body>
+	<script src="baseScript.js"></script>
+	<script src="script.js"></script>
+</html>
