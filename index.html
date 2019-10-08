@@ -10,7 +10,7 @@
 	<body>
 		<h1>Фоторедактор</h1>
 		<div class="content">
-            <div>
+            <div style="display: none;">
                 <div class="photo-editor" id="editor">
                     <canvas class="photo-editor__canvas" id="canvas">Обновите браузер</canvas>
                 </div>
@@ -27,9 +27,9 @@
                 </div>
             </div>
 
-            <div>
+            <div style="width: 100%; padding: 20px; ">
                 <div class="photo-editor-user" id="userPhoto">
-                    <canvas class="photo-editor__canvas" id="canvas-user">Обновите браузер</canvas>
+                    <canvas class="photo-user__canvas" id="canvas-user">Обновите браузер</canvas>
                 </div>
                 <div>
                     <input type="button"  id="rotateLeft" onclick="rotateImg(270)" value="←">

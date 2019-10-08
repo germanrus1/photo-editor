@@ -1,6 +1,7 @@
 var templateEditor = new TemplateEdit();
 var userEditor = new UserEdit();
 var resultEditor = new ResultEdit();
+var imgUser = new Image();
 
 function initTemplateEditor(btnUpload) {
   templateEditor.init('canvas', 'editor', btnUpload);
@@ -19,16 +20,13 @@ function rotateImg(angle = 90) {
 
 function showResult()
 {
+  imgUser.src = userEditor.canvas.toDataURL();
   resultEditor.getDateImages(templateEditor, userEditor);
   
   resultEditor.canvas.height = templateEditor.image.height;
   resultEditor.canvas.width = templateEditor.image.width;
   resultEditor.context.drawImage(templateEditor.image, 0, 0);
-
-  // resultEditor.context.translate(userEditor.image.width/2, userEditor.image.height/2);
-  resultEditor.context.rotate(userEditor.rotation * resultEditor.TO_RADIANS);
-
-  resultEditor.context.drawImage(userEditor.image, resultEditor.leftSelect, resultEditor.topSelect, resultEditor.widthUser, resultEditor.heightUser);
+  resultEditor.context.drawImage(imgUser, resultEditor.leftSelect, resultEditor.topSelect, resultEditor.widthUser, resultEditor.heightUser);
   resultEditor.editorWindow.style.width = resultEditor.canvas.offsetWidth + 'px';
 }
 

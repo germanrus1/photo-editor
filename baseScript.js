@@ -33,7 +33,7 @@ class Base {
       img.addEventListener("load", function () {
         base.drawImage(base.canvas, img, base.context, 0, 0);
         base.editorWindow.style.height = base.canvas.offsetHeight + "px";
-        base.image = img; //todo возможно надо удалить
+        base.image = img;
       });
     };
     if (btnUpload != undefined) {
@@ -49,6 +49,9 @@ class Base {
    * @param y integer
    */
   drawImage(canvasElement, img, context, x = 0, y = 0) {
+    if (img.width < this.editorWindow.offsetWidth) {
+      this.editorWindow.style.width = img.width + 'px';
+    }
     canvasElement.height = img.height;
     canvasElement.width = img.width;
     context.drawImage(img, x, y);
@@ -57,9 +60,7 @@ class Base {
 
   rotateImg(angle = 0)
   {
-    console.log(this.rotation);
-    console.log(angle);
-    this.rotation = this.getAngle(this.rotation, angle) 
+    this.rotation = this.getAngle(this.rotation, angle);
     this.drawRotatedImage();
   }
 
@@ -73,10 +74,11 @@ class Base {
     this.context.translate(this.image.width/2, this.image.height/2);
     this.context.rotate(this.rotation * this.TO_RADIANS);
     this.context.drawImage(this.image, -(this.image.width/2), -(this.image.height/2));
+    this.image.src = this.canvas.toDataURL();
     this.context.restore();
   }
 
-  getTransformText(x = null, y = null, r = null)
+  getTransformText(x = null, y = null, r = null, s = null)
   {
     var str = 'translate(';
 
@@ -90,10 +92,14 @@ class Base {
     } else {
       str += '0' + 'px';
     }
-    str += ')';
+    str += ') ';
 
     if (r !== null) {
-      str += 'rotate(' + String(r) + 'deg)';
+      str += 'rotate(' + String(r) + 'deg) ';
+    }
+
+    if (s !== null) {
+      str += 'scale(' + String(s) + ')';
     }
 
     return str;
@@ -115,9 +121,22 @@ class Base {
       return curAngle + angle;
     }
   }
-
-  mess(message) {
-    console.log(message);
+  // отрабатывание скролинга на разных браузерах одинакого
+  addOnWheel(elem, handler) {
+    if (elem.addEventListener) {
+      if ('onwheel' in document) {
+        // IE9+, FF17+
+        elem.addEventListener("wheel", handler);
+      } else if ('onmousewheel' in document) {
+        // устаревший вариант события
+        elem.addEventListener("mousewheel", handler);
+      } else {
+        // 3.5 <= Firefox < 17, более старое событие DOMMouseScroll пропустим
+        elem.addEventListener("MozMousePixelScroll", handler);
+      }
+    } else { // IE8-
+      text.attachEvent("onmousewheel", handler);
+    }
   }
 }
 
@@ -140,15 +159,16 @@ class TemplateEdit extends Base {
     // зажата ли ЛКМ
     document.onmousedown = function () {
       template.isMouseDown = true;
-    }
+    };
     document.onmouseup = function () {
       template.isMouseDown = false;
-    }
+    };
 
     this.editorWindow.onmousedown = function (event) {
       template.addSelectBlock('select-block', event);
-    }
+    };
 
+    // перемещение с зажатой ЛКМ
     this.editorWindow.onmousemove = function () {
       if (template.isMouseDown) {
         var x = event.pageX - canvas.offsetLeft,
@@ -218,18 +238,181 @@ class TemplateEdit extends Base {
   }
 }
 
-class UserEdit extends Base{
+class UserEdit extends Base {
   constructor() {
-    super();    
+    super();
+    this.scale = 1;
+    this.scaleKoef = 0.05;
   }
 
   init(idCanvasElement = false, idEditorWindowElement = false, btnUpload) {
     super.init(idCanvasElement, idEditorWindowElement, btnUpload);
+    this.addSelectBlock();
     this.addEvents();
   }
 
+
+  /**
+   * Вывод изображения
+   * @param canvasElement canvas
+   * @param x integer
+   * @param y integer
+   */
+  drawImage(canvasElement, img, context, x = 0, y = 0) {
+    canvasElement.width = img.width;
+    canvasElement.height = img.height;
+    this.editorWindow.style.width = String(this.canvas.offsetWidth) + 'px';
+    context.drawImage(img, x, y);
+  }
+
+  addSelectBlock() {
+    var h = 300,
+        w = 250;
+    this.scaleH = h / this.scale;
+    this.scaleW = w / this.scale;
+
+    var centerX = this.editorWindow.offsetWidth / 2,
+        centerY = this.editorWindow.offsetHeight / 2,
+        k = this.editorWindow.offsetWidth / this.editorWindow.offsetHeight;
+
+    var selectBlock = document.createElement("div");
+
+    // если горизонтальная
+    if (this.editorWindow.offsetWidth >= this.editorWindow.offsetHeight) {
+      selectBlock.style.width = '100%';
+      selectBlock.style.height = h / w * this.editorWindow.offsetHeight;
+      selectBlock.style.transform = 'translate(' + 0 + 'px, ' + String(centerY - h / w * this.editorWindow.offsetHeight / 2) + 'px)';
+    } else {
+      selectBlock.style.height = '100%';
+      selectBlock.style.width = w / h * this.editorWindow.offsetWidth;
+      selectBlock.style.transform = 'translate(' + 0 + 'px, ' + String(centerX - w / h * this.editorWindow.offsetWidth / 2) + 'px)';
+    }
+
+    this.koeficient = h / w;
+    selectBlock.id = 'select-block-user';
+    selectBlock.classList.add('select-block');
+    this.selectBlockUser = selectBlock;
+    this.editorWindow.append(selectBlock);
+  }
+
   addEvents() {
-    
+    var template = this;
+
+    // зажата ли ЛКМ
+    document.onmousedown = function () {
+      template.isMouseDown = true;
+    };
+    document.onmouseup = function () {
+      template.isMouseDown = false;
+    };
+    document.ontouchstart = function () {
+      template.isMouseDown = true;
+    };
+    document.ontouchend = function () {
+      template.isMouseDown = false;
+    };
+
+    this.editorWindow.onmousedown = function (event) {
+      template.beginSelectX = event.pageX - template.canvas.offsetLeft;
+      template.beginSelectY = event.pageY - template.canvas.offsetTop;
+    };
+
+    this.editorWindow.ontouchstart = function (event) {
+      console.log(123);
+      if (template.isMouseDown) {
+        console.log(456);
+        var x = event.pageX - template.canvas.offsetLeft,
+          y = event.pageY - template.canvas.offsetTop,
+          left = x - template.selectBlockUser.offsetWidth / 2,
+          top = y - template.selectBlockUser.offsetHeight / 2;
+
+        if (left < 0) {
+          left = 0;
+        }
+        if (top < 0) {
+          top = 0;
+        }
+        if (left + template.selectBlockUser.offsetWidth > template.editorWindow.offsetWidth) {
+          left = template.editorWindow.offsetWidth - template.selectBlockUser.offsetWidth;
+        }
+        if (top + template.selectBlockUser.offsetHeight > template.editorWindow.offsetHeight) {
+          top = template.editorWindow.offsetHeight - template.selectBlockUser.offsetHeight;
+        }
+        template.selectBlockUser.style.transform = template.getTransformText(left, top);
+      }
+    };
+
+    this.editorWindow.onmousemove = function (event) {
+      if (template.isMouseDown) {
+        var x = event.pageX - template.canvas.offsetLeft,
+            y = event.pageY - template.canvas.offsetTop,
+            left = x - template.selectBlockUser.offsetWidth / 2,
+            top = y - template.selectBlockUser.offsetHeight / 2;
+
+        if (left < 0) {
+          left = 0;
+        }
+        if (top < 0) {
+          top = 0;
+        }
+        if (left + template.selectBlockUser.offsetWidth > template.editorWindow.offsetWidth) {
+          left = template.editorWindow.offsetWidth - template.selectBlockUser.offsetWidth;
+        }
+        if (top + template.selectBlockUser.offsetHeight > template.editorWindow.offsetHeight) {
+          top = template.editorWindow.offsetHeight - template.selectBlockUser.offsetHeight;
+        }
+        template.selectBlockUser.style.transform = template.getTransformText(left, top);
+      }
+    };
+
+    // this.addOnWheel(this.selectBlockUser, function (e) {
+    //   e.preventDefault();
+    //   var delta = e.deltaY || e.detail || e.wheelDelta;
+    //   // var min = 30,
+    //   //     max = Math.max([template.editorWindow.offsetHeight, template.editorWindow.offsetWidth]),
+    //   //     width = template.selectBlockUser.offsetWidth,
+    //   //     height = template.selectBlockUser.offsetHeight,
+    //   var transform = template.getElementTranslateValues(template.selectBlockUser);
+    //
+    //   if (delta > 0) {
+    //     template.scale += template.scaleKoef;
+    //   } else {
+    //     template.scale -= template.scaleKoef;
+    //   }
+    //   console.log(template.getTransformText(transform[0], transform[1], null, template.scale.toFixed(3)));
+    //   template.selectBlockUser.style.transform = template.getTransformText(transform[0], transform[1], null, template.scale);
+
+      //
+      // if (delta > 0) {
+      //   width += template.scaleW;
+      //   height += template.scaleH;
+      // } else {
+      //   width -= template.scaleW;
+      //   height -= template.scaleH;
+      // }
+      //
+      // if (width < min || height < min) {
+      //   if (template.selectBlockUser.offsetWidth < template.selectBlockUser.offsetHeight) {
+      //     width = min;
+      //     height = min * template.selectBlockUser.offsetHeight / template.selectBlockUser.offsetWidth;
+      //   } else {
+      //     width = min * template.selectBlockUser.offsetHeight * template.selectBlockUser.offsetWidth;
+      //     height = min;
+      //   }
+      // }
+      //
+      // if (width > max || height > max || (transform[0] + width / 2 > template.selectBlockUser.offsetWidth) || (transform[0] + width / 2 > template.selectBlockUser.offsetWidth)) {
+      //   if (template.selectBlockUser.offsetWidth < template.selectBlockUser.offsetHeight) {
+      //     width = max;
+      //     height = max * template.selectBlockUser.offsetWidth / template.selectBlockUser.offsetHeight;
+      //   } else {
+      //     width = max * template.selectBlockUser.offsetHeight * template.selectBlockUser.offsetWidth;
+      //     height = max;
+      //   }
+      // }
+      //   template.selectBlockUser.style.width = String(width) + 'px';
+      // template.selectBlockUser.style.height = String(height) + 'px';
+    // });
   }
 }
 
